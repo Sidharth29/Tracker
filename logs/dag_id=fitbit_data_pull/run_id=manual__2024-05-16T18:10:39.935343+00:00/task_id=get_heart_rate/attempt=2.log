@@ -1,0 +1,40 @@
+[2024-05-16T18:15:42.741+0000] {taskinstance.py:1083} INFO - Dependencies all met for <TaskInstance: fitbit_data_pull.get_heart_rate manual__2024-05-16T18:10:39.935343+00:00 [queued]>
+[2024-05-16T18:15:42.747+0000] {taskinstance.py:1083} INFO - Dependencies all met for <TaskInstance: fitbit_data_pull.get_heart_rate manual__2024-05-16T18:10:39.935343+00:00 [queued]>
+[2024-05-16T18:15:42.747+0000] {taskinstance.py:1279} INFO - 
+--------------------------------------------------------------------------------
+[2024-05-16T18:15:42.748+0000] {taskinstance.py:1280} INFO - Starting attempt 2 of 2
+[2024-05-16T18:15:42.748+0000] {taskinstance.py:1281} INFO - 
+--------------------------------------------------------------------------------
+[2024-05-16T18:15:42.757+0000] {taskinstance.py:1300} INFO - Executing <Task(PythonOperator): get_heart_rate> on 2024-05-16 18:10:39.935343+00:00
+[2024-05-16T18:15:42.761+0000] {standard_task_runner.py:55} INFO - Started process 2199 to run task
+[2024-05-16T18:15:42.765+0000] {standard_task_runner.py:82} INFO - Running: ['***', 'tasks', 'run', 'fitbit_data_pull', 'get_heart_rate', 'manual__2024-05-16T18:10:39.935343+00:00', '--job-id', '46', '--raw', '--subdir', 'DAGS_FOLDER/fitbit_pull_dag.py', '--cfg-path', '/tmp/tmp7j1mywuc']
+[2024-05-16T18:15:42.765+0000] {standard_task_runner.py:83} INFO - Job 46: Subtask get_heart_rate
+[2024-05-16T18:15:42.825+0000] {task_command.py:388} INFO - Running <TaskInstance: fitbit_data_pull.get_heart_rate manual__2024-05-16T18:10:39.935343+00:00 [running]> on host f88edbb2c20c
+[2024-05-16T18:15:42.871+0000] {taskinstance.py:1509} INFO - Exporting the following env vars:
+AIRFLOW_CTX_DAG_OWNER=***
+AIRFLOW_CTX_DAG_ID=fitbit_data_pull
+AIRFLOW_CTX_TASK_ID=get_heart_rate
+AIRFLOW_CTX_EXECUTION_DATE=2024-05-16T18:10:39.935343+00:00
+AIRFLOW_CTX_TRY_NUMBER=2
+AIRFLOW_CTX_DAG_RUN_ID=manual__2024-05-16T18:10:39.935343+00:00
+[2024-05-16T18:15:43.373+0000] {taskinstance.py:1768} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/operators/python.py", line 175, in execute
+    return_value = self.execute_callable()
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/operators/python.py", line 192, in execute_callable
+    return self.python_callable(*self.op_args, **self.op_kwargs)
+  File "/opt/airflow/dags/fitbit_pull_dag.py", line 51, in _get_yesterday_heartrate
+    df_heartrate.to_csv(f'{output_dir}/heartrate_{yesterday}.csv',index=False)
+  File "/home/airflow/.local/lib/python3.7/site-packages/pandas/core/generic.py", line 3482, in to_csv
+    storage_options=storage_options,
+  File "/home/airflow/.local/lib/python3.7/site-packages/pandas/io/formats/format.py", line 1105, in to_csv
+    csv_formatter.save()
+  File "/home/airflow/.local/lib/python3.7/site-packages/pandas/io/formats/csvs.py", line 243, in save
+    storage_options=self.storage_options,
+  File "/home/airflow/.local/lib/python3.7/site-packages/pandas/io/common.py", line 707, in get_handle
+    newline="",
+FileNotFoundError: [Errno 2] No such file or directory: '/opt/airflow/output/heartrate_2024-05-15.csv'
+[2024-05-16T18:15:43.384+0000] {taskinstance.py:1323} INFO - Marking task as FAILED. dag_id=fitbit_data_pull, task_id=get_heart_rate, execution_date=20240516T181039, start_date=20240516T181542, end_date=20240516T181543
+[2024-05-16T18:15:43.393+0000] {standard_task_runner.py:105} ERROR - Failed to execute job 46 for task get_heart_rate ([Errno 2] No such file or directory: '/opt/airflow/output/heartrate_2024-05-15.csv'; 2199)
+[2024-05-16T18:15:43.437+0000] {local_task_job.py:208} INFO - Task exited with return code 1
+[2024-05-16T18:15:43.452+0000] {taskinstance.py:2578} INFO - 0 downstream tasks scheduled from follow-on schedule check

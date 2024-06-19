@@ -1,0 +1,32 @@
+[2024-05-16T17:30:09.471+0000] {taskinstance.py:1083} INFO - Dependencies all met for <TaskInstance: fitbit_data_pull.get_heart_rate manual__2024-05-16T17:30:07.856675+00:00 [queued]>
+[2024-05-16T17:30:09.477+0000] {taskinstance.py:1083} INFO - Dependencies all met for <TaskInstance: fitbit_data_pull.get_heart_rate manual__2024-05-16T17:30:07.856675+00:00 [queued]>
+[2024-05-16T17:30:09.477+0000] {taskinstance.py:1279} INFO - 
+--------------------------------------------------------------------------------
+[2024-05-16T17:30:09.478+0000] {taskinstance.py:1280} INFO - Starting attempt 1 of 2
+[2024-05-16T17:30:09.478+0000] {taskinstance.py:1281} INFO - 
+--------------------------------------------------------------------------------
+[2024-05-16T17:30:09.486+0000] {taskinstance.py:1300} INFO - Executing <Task(PythonOperator): get_heart_rate> on 2024-05-16 17:30:07.856675+00:00
+[2024-05-16T17:30:09.491+0000] {standard_task_runner.py:55} INFO - Started process 1028 to run task
+[2024-05-16T17:30:09.494+0000] {standard_task_runner.py:82} INFO - Running: ['***', 'tasks', 'run', 'fitbit_data_pull', 'get_heart_rate', 'manual__2024-05-16T17:30:07.856675+00:00', '--job-id', '37', '--raw', '--subdir', 'DAGS_FOLDER/fitbit_pull_dag.py', '--cfg-path', '/tmp/tmph1yaiapi']
+[2024-05-16T17:30:09.495+0000] {standard_task_runner.py:83} INFO - Job 37: Subtask get_heart_rate
+[2024-05-16T17:30:09.553+0000] {task_command.py:388} INFO - Running <TaskInstance: fitbit_data_pull.get_heart_rate manual__2024-05-16T17:30:07.856675+00:00 [running]> on host f88edbb2c20c
+[2024-05-16T17:30:09.602+0000] {taskinstance.py:1509} INFO - Exporting the following env vars:
+AIRFLOW_CTX_DAG_OWNER=***
+AIRFLOW_CTX_DAG_ID=fitbit_data_pull
+AIRFLOW_CTX_TASK_ID=get_heart_rate
+AIRFLOW_CTX_EXECUTION_DATE=2024-05-16T17:30:07.856675+00:00
+AIRFLOW_CTX_TRY_NUMBER=1
+AIRFLOW_CTX_DAG_RUN_ID=manual__2024-05-16T17:30:07.856675+00:00
+[2024-05-16T17:30:09.604+0000] {taskinstance.py:1768} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/operators/python.py", line 175, in execute
+    return_value = self.execute_callable()
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/operators/python.py", line 192, in execute_callable
+    return self.python_callable(*self.op_args, **self.op_kwargs)
+  File "/opt/airflow/dags/fitbit_pull_dag.py", line 39, in _get_yesterday_heartrate
+    yesterday = datetime.now() - datetime.timedelta(days=1)
+AttributeError: type object 'datetime.datetime' has no attribute 'timedelta'
+[2024-05-16T17:30:09.613+0000] {taskinstance.py:1323} INFO - Marking task as UP_FOR_RETRY. dag_id=fitbit_data_pull, task_id=get_heart_rate, execution_date=20240516T173007, start_date=20240516T173009, end_date=20240516T173009
+[2024-05-16T17:30:09.620+0000] {standard_task_runner.py:105} ERROR - Failed to execute job 37 for task get_heart_rate (type object 'datetime.datetime' has no attribute 'timedelta'; 1028)
+[2024-05-16T17:30:09.666+0000] {local_task_job.py:208} INFO - Task exited with return code 1
+[2024-05-16T17:30:09.684+0000] {taskinstance.py:2578} INFO - 0 downstream tasks scheduled from follow-on schedule check

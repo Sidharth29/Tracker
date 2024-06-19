@@ -1,0 +1,30 @@
+[2024-06-16T18:00:00.643+0000] {taskinstance.py:1083} INFO - Dependencies all met for <TaskInstance: fitbit_data_pull.get_heart_rate scheduled__2024-06-15T18:00:00+00:00 [queued]>
+[2024-06-16T18:00:00.648+0000] {taskinstance.py:1083} INFO - Dependencies all met for <TaskInstance: fitbit_data_pull.get_heart_rate scheduled__2024-06-15T18:00:00+00:00 [queued]>
+[2024-06-16T18:00:00.648+0000] {taskinstance.py:1279} INFO - 
+--------------------------------------------------------------------------------
+[2024-06-16T18:00:00.649+0000] {taskinstance.py:1280} INFO - Starting attempt 1 of 2
+[2024-06-16T18:00:00.649+0000] {taskinstance.py:1281} INFO - 
+--------------------------------------------------------------------------------
+[2024-06-16T18:00:00.654+0000] {taskinstance.py:1300} INFO - Executing <Task(PythonOperator): get_heart_rate> on 2024-06-15 18:00:00+00:00
+[2024-06-16T18:00:00.659+0000] {standard_task_runner.py:55} INFO - Started process 27127 to run task
+[2024-06-16T18:00:00.662+0000] {standard_task_runner.py:82} INFO - Running: ['***', 'tasks', 'run', 'fitbit_data_pull', 'get_heart_rate', 'scheduled__2024-06-15T18:00:00+00:00', '--job-id', '92', '--raw', '--subdir', 'DAGS_FOLDER/fitbit_pull_dag.py', '--cfg-path', '/tmp/tmptqnwcs_9']
+[2024-06-16T18:00:00.663+0000] {standard_task_runner.py:83} INFO - Job 92: Subtask get_heart_rate
+[2024-06-16T18:00:00.717+0000] {task_command.py:388} INFO - Running <TaskInstance: fitbit_data_pull.get_heart_rate scheduled__2024-06-15T18:00:00+00:00 [running]> on host 36244bbcc32e
+[2024-06-16T18:00:00.753+0000] {taskinstance.py:1507} INFO - Exporting the following env vars:
+AIRFLOW_CTX_DAG_OWNER=***
+AIRFLOW_CTX_DAG_ID=fitbit_data_pull
+AIRFLOW_CTX_TASK_ID=get_heart_rate
+AIRFLOW_CTX_EXECUTION_DATE=2024-06-15T18:00:00+00:00
+AIRFLOW_CTX_TRY_NUMBER=1
+AIRFLOW_CTX_DAG_RUN_ID=scheduled__2024-06-15T18:00:00+00:00
+[2024-06-16T18:00:01.284+0000] {fitbit_pull_dag.py:60} INFO - Successfully extracted data for 2024-06-15:          date      time  heartrate      data_insert_timestamp
+0  2024-06-15  08:39:00         69 2024-06-16 18:00:01.277729
+1  2024-06-15  08:40:00         68 2024-06-16 18:00:01.277729
+2  2024-06-15  08:41:00         76 2024-06-16 18:00:01.277729
+3  2024-06-15  08:42:00         85 2024-06-16 18:00:01.277729
+4  2024-06-15  08:43:00         82 2024-06-16 18:00:01.277729
+[2024-06-16T18:00:01.284+0000] {fitbit_pull_dag.py:62} INFO - Storing file /opt/***/output/heartrate_2024-06-15.csv
+[2024-06-16T18:00:01.296+0000] {python.py:177} INFO - Done. Returned value was: None
+[2024-06-16T18:00:01.303+0000] {taskinstance.py:1318} INFO - Marking task as SUCCESS. dag_id=fitbit_data_pull, task_id=get_heart_rate, execution_date=20240615T180000, start_date=20240616T180000, end_date=20240616T180001
+[2024-06-16T18:00:01.327+0000] {local_task_job.py:208} INFO - Task exited with return code 0
+[2024-06-16T18:00:01.340+0000] {taskinstance.py:2578} INFO - 0 downstream tasks scheduled from follow-on schedule check
