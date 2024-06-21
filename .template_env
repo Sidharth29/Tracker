@@ -1,0 +1,10 @@
+#rename this file to .env
+
+access_token="your_fitbit_access_token"
+
+# Database credentials
+db_user = 'postgres_admin'
+db_password = 'postgres_secret'
+db_host = 'db_hostname'
+db_port = 'port'
+db_name = 'db_name'
