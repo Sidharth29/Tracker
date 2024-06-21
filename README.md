@@ -6,11 +6,4 @@ An ELT pipeline to fetch personal health and content consumption data from APIs,
 
 ### Health Data
 
-The health data is extracted from fitbit and Strava 
-
-
-
-
-# Push to git
-
-git push https://Sidharth29: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@github.com/Sidharth29/Tracker.git
+The health data is extracted from fitbit and Strava

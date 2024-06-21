@@ -1,11 +1,18 @@
-# Enter docker container using bash
+## Useful commands
+
+### Enter docker container using bash
 docker exec -it 36244bbcc32e bash
 
 
-# Step into POSTGRES db
+### Step into POSTGRES db
 psql -h localhost -p 5430 -U admin -d health_monitor_db
 
-# Useful Links
+
+### Push to git
+
+git push https://Sidharth29:{PAT}@github.com/Sidharth29/Tracker.git
+
+## Useful Links
 
 Spinning up a dockerized version of airflow
 
