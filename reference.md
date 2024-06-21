@@ -8,3 +8,10 @@ psql -h localhost -p 5430 -U admin -d health_monitor_db
 # Useful Links
 
 Spinning up a dockerized version of airflow
+
+
+# Notes
+
+- Framing the connect string to connect to the db
+    - Hostname: This is the service name defined in the docker-compose file for the database (ex: db) not localhost (what we use locally)
+    - Port: This the mapped port number on the docker end (ex: 5432) not one used locally (ex: 5430)  
