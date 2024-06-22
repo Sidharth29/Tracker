@@ -1,0 +1,36 @@
+# Name your project
+name: 'transform_layer'
+version: '1.0.0'
+
+# Specify the profile to use for this project
+profile: 'transform_layer'
+
+# Define the directories for your models, seeds, snapshots, and tests
+model-paths: ["models"]
+seed-paths: ["seeds"]
+snapshot-paths: ["snapshots"]
+test-paths: ["tests"]
+analysis-paths: ["analysis"]
+macro-paths: ["macros"]
+data-paths: ["data"]
+
+# Define the target for the build
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_modules"
+
+# Configuring the models directory
+models:
+  transform_layer:
+    # Configure model materializations, such as table, view, ephemeral
+    # Default is view
+    materialized: table
+
+# You can also add configurations for other resources such as seeds, snapshots, etc.
+# seeds:
+#   my_dbt_project:
+#     +schema: seeds
+# snapshots:
+#   my_dbt_project:
+#     +schema: snapshots

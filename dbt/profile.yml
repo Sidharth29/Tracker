@@ -1,0 +1,11 @@
+transform_layer:
+  outputs:
+    dev:
+      type: postgres
+      host: db
+      user: admin
+      password: secret             #TODO: Use env_var instead
+      dbname: health_monitor_db
+      port: 5432
+      schema: heartrate
+  target: dev
