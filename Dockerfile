@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends --allow-downgra
     gcc \
     python3-dev \
     libpq-dev=13.14-0+deb11u1 \
+    git \
     libpq5=13.14-0+deb11u1
 
 
@@ -38,4 +39,4 @@ RUN pip install -r requirements.txt
 WORKDIR /opt/airflow/dbt/transform_layer
 
 # Create necessary dbt directories if they don't exist
-RUN mkdir -p models seeds snapshots tests macros analysis data
+RUN mkdir -p models seeds snapshots tests macros analysis

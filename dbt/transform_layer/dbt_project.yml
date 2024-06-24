@@ -12,7 +12,6 @@ snapshot-paths: ["snapshots"]
 test-paths: ["tests"]
 analysis-paths: ["analysis"]
 macro-paths: ["macros"]
-data-paths: ["data"]
 
 # Define the target for the build
 target-path: "target"
