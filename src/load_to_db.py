@@ -71,6 +71,9 @@ class health_db:
                     df.to_sql(table_name, engine, if_exists='append', index=False, schema=schema)
                     logging.debug(f'Successfully inserted data from {filepath}')
                     logging.debug(f'Moving file to {move_path}')
+                    destination_path = os.path.join(move_path, file)
+                    if os.path.exists(destination_path):
+                        os.remove(destination_path)
                     shutil.move(filepath, move_path)
         # except FileNotFoundError:
         #     logging.error(f"The directory {output_dir} does not exist.")

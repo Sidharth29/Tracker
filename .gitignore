@@ -1,6 +1,8 @@
 /output
 /data
 /logs
+/dbt/transform_layer/logs
+/dbt/transform_layer/target
 
 *.env
 *.logs

@@ -67,7 +67,7 @@ def _get_yesterday_heartrate():
 
     logging.info(f'Storing file {output_dir}/heartrate_{yesterday}.csv')
 
-    df_heartrate.to_csv(f'/opt/airflow/output/heartrate_{yesterday}.csv',index=False)
+    df_heartrate.to_csv(f'/opt/airflow/output/heartrate_{yesterday}.csv',index=False, mode='w')
 
 
 def _load_to_heartrate_db():
@@ -102,4 +102,9 @@ with DAG(
             python_callable = _load_to_heartrate_db
         )
 
-        get_heart_rate >> load_heart_rate
+        agg_daily_stats = BashOperator(
+            task_id = "agg_daily_stats",
+            bash_command = "cd /opt/airflow/dbt/transform_layer && dbt run"
+        )
+
+        get_heart_rate >> load_heart_rate >> agg_daily_stats

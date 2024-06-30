@@ -1,0 +1,15 @@
+
+version: 2
+
+sources:
+  - name: heartrate_bronze
+    database: health_monitor_db
+    schema: heartrate
+    tables:
+      - name: heartrate_data
+
+
+models:
+
+  - name: heartrate_daily
+    description: "Aggregate heartrate stats at a daily level from the raw minute level granularity"

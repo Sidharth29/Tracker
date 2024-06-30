@@ -22,9 +22,11 @@ clean-targets:
 # Configuring the models directory
 models:
   transform_layer:
-    # Configure model materializations, such as table, view, ephemeral
-    # Default is view
-    materialized: table
+    heartrate:
+      +materialized: incremental
+      +database: "health_monitor_db"
+      +schema: "heartrate_silver"
+
 
 # You can also add configurations for other resources such as seeds, snapshots, etc.
 # seeds:
