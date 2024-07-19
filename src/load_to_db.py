@@ -1,10 +1,12 @@
 import pandas as pd
 import numpy as np
 import os
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 import dotenv
 import logging
 import shutil
+from datetime import datetime, timedelta
+import pendulum
 
 dotenv.load_dotenv()
 
@@ -42,6 +44,7 @@ class health_db:
     db_host = os.getenv("db_host")
     db_port = os.getenv("db_port")
     db_name = os.getenv("db_name")
+   
 
     @classmethod
     def load_to_db(cls, keyword:str, table_name: str, schema: str):
@@ -83,6 +86,29 @@ class health_db:
 
         print(f"Db User: {db_user}")
 
+    @classmethod
+    def get_latest_date(cls, table_name: str, schema: str, date_field: str):
+        """
+        Load latest date from the table
+
+        Args:
+        -----
+        table_name: The tablename within the database
+        schema: The schema name
+        date_field: the date field name to be used
+        """
+
+        # Create a database engine
+        engine = create_engine(f'postgresql+psycopg2://{cls.db_user}:{cls.db_password}@{cls.db_host}:{cls.db_port}/{cls.db_name}?options=-csearch_path={schema}')
+
+        query = f"SELECT max({date_field}) as max_date FROM {table_name}"
+
+        with engine.connect() as connection:
+            result = connection.execute(text(query))
+            max_date = result.scalar()
+
+        return max_date
+
 
 if __name__=='__main__':
-    health_db.load_to_db(keyword="heartrate", table_name='heartrate_data', schema='heartrate')
+    max_date = health_db.get_latest_date(table_name='heartrate_daily', schema='heartrate_silver', date_field="date")

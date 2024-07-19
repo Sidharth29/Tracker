@@ -5,8 +5,8 @@ import os
 import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from src.load_to_db import health_db
+from src.utils import generate_date_list
 
 from random import randint
 from datetime import datetime, timedelta
@@ -33,41 +33,51 @@ repo_dir = os.path.dirname(src_dir)
 output_dir = os.path.join(repo_dir,'output')
 
 
-def _get_yesterday_heartrate():
+def _get_heartrate():
     """
-    Fetches the heart rate date from yesterday
+    Fetches the heart rate date till yesterday
     """
+
+    # Latest date to fetch data - yesterday
     pt=pendulum.timezone('America/Los_Angeles')
     yesterday = datetime.now(pt) - timedelta(days=1)
-    yesterday = yesterday.strftime('%Y-%m-%d')
 
-    url = f"https://api.fitbit.com/1/user/-/activities/heart/date/{yesterday}/1d/1min/time/00:00/23:59.json"
+    # Get latest date loaded into db
+    max_date = health_db.get_latest_date(table_name='heartrate_daily', schema='heartrate_silver', date_field="date")
+    
+    # Date range to extract data
+    date_range = generate_date_list(start_date=max_date, end_date=yesterday.date())
 
-    response = requests.get(url, headers=headers)
+    for dt in date_range:
+        dt_formatted = dt.strftime('%Y-%m-%d')
 
-    response_json = response.json()
+        url = f"https://api.fitbit.com/1/user/-/activities/heart/date/{dt_formatted}/1d/1min/time/00:00/23:59.json"
 
-    if response.status_code != 200:
-        logging.error(f'API call failed with status: {response.status_code}')
+        response = requests.get(url, headers=headers)
+
+        response_json = response.json()
+
+        if response.status_code != 200:
+            logging.error(f'API call failed with status: {response.status_code}')
 
 
-    heartrate_data = response_json['activities-heart-intraday']['dataset']
-        
-    df_heartrate = pd.DataFrame(heartrate_data)
+        heartrate_data = response_json['activities-heart-intraday']['dataset']
+            
+        df_heartrate = pd.DataFrame(heartrate_data)
 
-    df_heartrate['date'] = yesterday
+        df_heartrate['date'] = dt
 
-    df_heartrate = df_heartrate.rename({'value':'heartrate'}, axis=1)
+        df_heartrate = df_heartrate.rename({'value':'heartrate'}, axis=1)
 
-    df_heartrate = df_heartrate[['date','time','heartrate']]
+        df_heartrate = df_heartrate[['date','time','heartrate']]
 
-    df_heartrate['data_insert_timestamp'] = datetime.now()
+        df_heartrate['data_insert_timestamp'] = datetime.now()
 
-    logging.info(f"Successfully extracted data for {yesterday}: {df_heartrate.head()}")
+        logging.info(f"Successfully extracted data for {dt}: {df_heartrate.head()}")
 
-    logging.info(f'Storing file {output_dir}/heartrate_{yesterday}.csv')
+        logging.info(f'Storing file {output_dir}/heartrate_{dt}.csv')
 
-    df_heartrate.to_csv(f'/opt/airflow/output/heartrate_{yesterday}.csv',index=False, mode='w')
+        df_heartrate.to_csv(f'/opt/airflow/output/heartrate_{dt}.csv',index=False, mode='w')
 
 
 def _load_to_heartrate_db():
@@ -94,7 +104,7 @@ with DAG(
 
         get_heart_rate = PythonOperator(
             task_id = "get_heart_rate",
-            python_callable = _get_yesterday_heartrate
+            python_callable = _get_heartrate
         )
 
         load_heart_rate = PythonOperator(
