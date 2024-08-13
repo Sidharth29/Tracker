@@ -6,6 +6,7 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from src.load_to_db import health_db
+from src.fitbit import get_logged_runs
 from src.utils import generate_date_list
 
 from random import randint
@@ -84,8 +85,35 @@ def _load_to_heartrate_db():
     """
     Loads the onboarded CSV data into the POSTGRES db
     """
-    health_db.load_to_db(keyword="heartrate", table_name='heartrate_data', schema='heartrate')
+    health_db.load_files_to_db(keyword="heartrate", table_name='heartrate_data', schema='heartrate')
 
+
+def _load_runs_to_db():
+    """
+    Fetches the runs for the unupdated range and loads it to the DB
+    """
+    # Latest date to fetch data - yesterday
+    pt=pendulum.timezone('America/Los_Angeles')
+    yesterday = datetime.now(pt) - timedelta(days=1)
+
+    yesterday = pd.to_datetime(yesterday.date())
+
+    # Get latest date loaded into db
+    max_date = health_db.get_latest_date(table_name='heartrate_daily', schema='heartrate_silver', date_field="date")
+
+    max_date = pd.to_datetime(max_date)
+
+    days_unpdated = pd.Timedelta(value=(yesterday - max_date), unit='days').days
+
+    df_runs = get_logged_runs(n_days=days_unpdated+2)
+
+    # Upload to Database
+    health_db.load_df_to_db(df=df_runs, table_name='all_runs', schema='runs')
+
+
+
+
+    
 
 with DAG(
          "fitbit_data_pull", \
@@ -112,9 +140,14 @@ with DAG(
             python_callable = _load_to_heartrate_db
         )
 
+        get_and_load_runs = PythonOperator(
+            task_id = "get_and_load_runs",
+            python_callable = _load_runs_to_db
+        )
+
         agg_daily_stats = BashOperator(
             task_id = "agg_daily_stats",
             bash_command = "cd /opt/airflow/dbt/transform_layer && dbt run"
         )
 
-        get_heart_rate >> load_heart_rate >> agg_daily_stats
+        get_heart_rate >> load_heart_rate >> get_and_load_runs >> agg_daily_stats

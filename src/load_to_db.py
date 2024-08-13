@@ -47,13 +47,17 @@ class health_db:
    
 
     @classmethod
-    def load_to_db(cls, keyword:str, table_name: str, schema: str):
+    def load_files_to_db(cls, keyword:str, table_name: str, schema: str):
         """
         Load contents of a directory (csv/parquet) to a database
 
         Args:
         -----
         keyword: The keyword to identify the filenames to load to the database
+
+        Return:
+        -------
+        None
         """
 
         # Create a database engine
@@ -87,6 +91,30 @@ class health_db:
         print(f"Db User: {db_user}")
 
     @classmethod
+    def load_df_to_db(cls, df: pd.DataFrame, table_name: str, schema: str):
+        """
+        Loads contents of the provided dataframe to the POSTGRES table
+
+        Args:
+        -----
+        df: The dataframe containing the data to be loaded
+        table_name: the target table to update
+        schema: The schema of the target table
+
+        Return:
+        ------- 
+        None
+        """
+
+        # Create a database engine
+        engine = create_engine(f'postgresql+psycopg2://{cls.db_user}:{cls.db_password}@{cls.db_host}:{cls.db_port}/{cls.db_name}?options=-csearch_path={schema}')
+
+        # Upload data to table
+        logging.debug(f'Inserting {df.shape[0]} rows into table {schema}.{table_name}')
+        df.to_sql(table_name, engine, if_exists='append', index=False, schema=schema)
+        logging.debug('Successfully inserted data to table')
+
+    @classmethod
     def get_latest_date(cls, table_name: str, schema: str, date_field: str):
         """
         Load latest date from the table
@@ -96,6 +124,10 @@ class health_db:
         table_name: The tablename within the database
         schema: The schema name
         date_field: the date field name to be used
+
+        Return:
+        -------
+        None
         """
 
         # Create a database engine
@@ -108,6 +140,47 @@ class health_db:
             max_date = result.scalar()
 
         return max_date
+
+    @classmethod
+    def load_db_to_df(cls, table_name: str, schema: str) -> pd.DataFrame:
+    """
+    Load the contents of a database table to a pandas DataFrame
+    
+    Args:
+    table_name (str): Name of the table to query
+    schema (str): Schema name where the table is located
+    
+    Returns:
+    pd.DataFrame: DataFrame containing the queried data
+    """
+    # Set up engine to communicate with the database
+    engine = create_engine(f'postgresql+psycopg2://{cls.db_user}:{cls.db_password}@{cls.db_host}:{cls.db_port}/{cls.db_name}?options=-csearch_path={schema}')
+
+    # Query to fetch the data from the database
+    query = f'SELECT * FROM {schema}.{table_name}'
+
+    try:
+        # Fetch the data from the database and load into a DataFrame
+        df = pd.read_sql_query(sql=text(query), con=engine)
+        
+        # # Convert date and time columns to appropriate dtypes
+        # df['date'] = pd.to_datetime(df['date'])
+        # df['start_time'] = pd.to_datetime(df['start_time'], format='%H:%M:%S').dt.time
+        # df['end_time'] = pd.to_datetime(df['end_time'], format='%H:%M:%S').dt.time
+        # df['data_insert_timestamp'] = pd.to_datetime(df['data_insert_timestamp'])
+        
+        # # Convert numeric columns to appropriate dtypes
+        # numeric_columns = ['duration_minutes', 'distance_miles', 'pace_min_mile', 'speed_mph', 'calories_burned']
+        # df[numeric_columns] = df[numeric_columns].apply(pd.to_numeric, errors='coerce')
+        
+        return df
+    
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return pd.DataFrame()  # Return an empty DataFrame if there's an error
+    
+    finally:
+        engine.dispose()  # Close the database connection
 
 
 if __name__=='__main__':
