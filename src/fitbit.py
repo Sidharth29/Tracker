@@ -1,14 +1,21 @@
 import os
 import pandas as pd
-import datetime
+from datetime import datetime, timedelta
 import requests
+import dotenv
+import pendulum
+import logging
+
+dotenv.load_dotenv()
 
 src_dir = os.path.dirname(os.path.abspath(__file__))
 repo_dir = os.path.dirname(src_dir)
 output_dir = os.path.join(repo_dir,'output')
 
+logging.basicConfig(level=logging.INFO)
 
-access_token="eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyM1JYRFIiLCJzdWIiOiI5V1QzQkgiLCJpc3MiOiJGaXRiaXQiLCJ0eXAiOiJhY2Nlc3NfdG9rZW4iLCJzY29wZXMiOiJyc29jIHJlY2cgcnNldCByb3h5IHJudXQgcnBybyByc2xlIHJjZiByYWN0IHJsb2MgcnJlcyByd2VpIHJociBydGVtIiwiZXhwIjoxNzQ2ODUyNjI0LCJpYXQiOjE3MTUzMTY5OTR9.xcJoIi_O8rYh-sVXUbc0bBOk1JYCuLzYhzB3hJ9Tx1c"
+
+access_token=os.getenv('access_token')
 
 headers = {
             'Authorization': f'Bearer {access_token},'
@@ -21,7 +28,7 @@ def get_yesterday_heartrate():
     Fetches the heart rate date from yesterday
     """
 
-    yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
+    yesterday = datetime.now() - timedelta(days=1)
     yesterday = yesterday.strftime('%Y-%m-%d')
 
     url = f"https://api.fitbit.com/1/user/-/activities/heart/date/{yesterday}/1d/1min/time/00:00/23:59.json"
@@ -47,10 +54,100 @@ def store_csv(df_heartrate_yesterday):
     """
     Stores the csv to the output folder
     """
-    yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
+    yesterday = datetime.now() - timedelta(days=1)
     yesterday = yesterday.strftime('%Y-%m-%d')
 
     df_heartrate_yesterday.to_csv(f'{output_dir}/heartrate_{yesterday}.csv',index=False)
+
+
+def get_logged_runs(n_days: int):
+    """
+    Fetches the logged runs data for the last n days
+
+    Args:
+    -----
+    n_days: Number of days to look back
+
+    Return:
+    -------
+    df_runs: Dataframe with the run details
+    """
+    pt = pendulum.timezone('America/Los_Angeles')
+    end_date = datetime.now(pt).strftime('%Y-%m-%d')
+    start_date = (datetime.now(pt) - timedelta(days=n_days)).strftime('%Y-%m-%d')
+
+    url = f"https://api.fitbit.com/1/user/-/activities/list.json?afterDate={start_date}&sort=desc&offset=0&limit=100"
+
+    response = requests.get(url, headers=headers)
+
+    if response.status_code != 200:
+        logging.error(f'API call failed with status: {response.status_code}')
+        return None
+
+    response_json = response.json()
+    activities = response_json.get('activities', [])
+
+    # Filter for run activities
+    run_activities = [activity for activity in activities if activity['activityName'] == 'Run']
+
+    df_runs = pd.DataFrame(run_activities)
+
+    if not df_runs.empty:
+
+        # Select and rename relevant columns
+        columns_to_keep = ['startTime', 'duration', 'distance', 'pace', 'speed', 'calories']
+        df_runs = df_runs[columns_to_keep]
+        df_runs = df_runs.rename({
+            'startTime': 'run_start_time',
+            'duration': 'duration_ms',
+            'distance': 'distance_km',
+            'pace': 'pace_min_km',
+            'speed': 'speed_km_h',
+            'calories': 'calories_burned'
+        }, axis=1)
+        
+        df_runs['run_start_time'] = pd.to_datetime(df_runs['run_start_time'])
+
+        # Calculate date from run start time
+        df_runs['date'] = df_runs['run_start_time'].dt.date
+
+        # Compute start time
+        df_runs['start_time'] = df_runs['run_start_time'].dt.strftime('%H:%M:%S')
+
+        # Convert duration from milliseconds to minutes
+        df_runs['duration_minutes'] = df_runs['duration_ms'] / 60000
+
+        # Calculate the end time
+        df_runs['time_delta_start'] = pd.to_timedelta(df_runs['start_time'])
+        df_runs['end_time'] = (df_runs['time_delta_start'] + pd.to_timedelta(df_runs['duration_minutes'], unit='m'))
+        
+        df_runs['end_time'] = (pd.to_datetime('2004-01-30') + df_runs['end_time']).dt.strftime('%H:%M:%S')
+
+        df_runs['duration_minutes'] = (df_runs['duration_minutes']).round(2)
+        # df_runs['end_time'] = df_runs['end_time'].astype(str)           
+
+        # Convert distance from kilometers to miles
+        df_runs['distance_miles'] = (df_runs['distance_km'] * 0.621371).round(2)
+
+        # Convert pace from min/km to min/mile
+        df_runs['pace_min_mile'] = (df_runs['pace_min_km'] / 0.621371).round(2)
+
+        # Convert speed from km/h to mph
+        df_runs['speed_mph'] = (df_runs['speed_km_h'] * 0.621371).round(2)
+
+        # Reorder columns
+        df_runs = df_runs[['date', 'start_time', 'end_time', 'duration_minutes', 'distance_miles', 'pace_min_mile', 'speed_mph', 'calories_burned']]
+
+        df_runs['data_insert_timestamp'] = datetime.now()
+        
+        logging.info(f"Successfully extracted run data: {df_runs.head()}")
+
+        logging.info(f"Successfully extracted run data: {df_runs.head()}")
+
+    else:
+        logging.info("No data retrieved")
+
+    return df_runs
 
 
 if __name__=='__main__':

@@ -18,7 +18,7 @@ Spinning up a dockerized version of airflow
 
 
 # Notes
-
+- **Update the Dockerfile to remove the platform part if you're not using an M1 MAC** 
 - Framing the connect string to connect to the db
     - Hostname: This is the service name defined in the docker-compose file for the database (ex: db) not localhost (what we use locally)
     - Port: This the mapped port number on the docker end (ex: 5432) not one used locally (ex: 5430)  
