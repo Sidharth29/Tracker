@@ -1,5 +1,18 @@
 ## Useful commands
 
+# Building Up services
+docker compose build --no-cache
+
+# Spinning them up
+docker compose up -d
+
+# Checking logs
+docker compose logs airflow-init
+
+# Clearing unused caches
+docker system prune -a # Clears all images (Careful)
+
+
 ### Enter docker container using bash
 docker exec -it 36244bbcc32e bash
 
