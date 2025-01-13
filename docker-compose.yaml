@@ -65,6 +65,11 @@ x-airflow-common:
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'true'
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
+    AIRFLOW__CORE__KILLED_TASK_CLEANUP_TIME: 60
+    AIRFLOW__CELERY__WORKER_PREFETCH_MULTIPLIER: 1
+    AIRFLOW__CELERY__MAX_TASKS_PER_CHILD: 50
+    AIRFLOW__LOGGING__LOGGING_LEVEL: 'INFO'
+    AIRFLOW__LOGGING__SHOW_CONTEXT_ENTER_EXIT: 'True'
     # yamllint disable rule:line-length
     # Use simple http server on scheduler for health checks
     # See https://airflow.apache.org/docs/apache-airflow/stable/administration-and-deployment/logging-monitoring/check-health.html#scheduler-health-check-server
@@ -187,20 +192,34 @@ services:
       args:
         AIRFLOW_UID: ${AIRFLOW_UID:-50000}
     user: "${AIRFLOW_UID:-50000}:0"
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
     <<: *airflow-common
     command: celery worker
     healthcheck:
       test:
         - "CMD-SHELL"
         - 'celery --app airflow.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"'
-      interval: 30s
-      timeout: 10s
+      interval: 60s
+      timeout: 20s
       retries: 5
-      start_period: 30s
+      start_period: 60s
     environment:
       <<: *airflow-common-env
       DUMB_INIT_SETSID: "0"
-    restart: always
+      # Add these new environment variables
+      AIRFLOW__CELERY__WORKER_TIMEOUT: 120
+      AIRFLOW__CELERY__WORKER_CONCURRENCY: 8
+      AIRFLOW__CELERY__BROKER_CONNECTION_TIMEOUT: 60
+      AIRFLOW__CELERY__WORKER_SHUTDOWN_TIMEOUT: 60
+      AIRFLOW__CELERY__OPERATION_TIMEOUT: 1.0
+    restart: unless-stopped
     depends_on:
       redis:
         condition: service_healthy

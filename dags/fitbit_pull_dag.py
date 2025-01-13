@@ -14,13 +14,16 @@ from datetime import datetime, timedelta
 import pandas as pd
 import os
 import requests
+from airflow.utils.log.logging_mixin import LoggingMixin
 import logging
 import pendulum
 import dotenv
 
 dotenv.load_dotenv()
 
-logging.basicConfig(level=logging.INFO)
+logger = LoggingMixin().log
+logger.setLevel(logging.INFO)
+
 
 access_token="eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyM1JYRFIiLCJzdWIiOiI5V1QzQkgiLCJpc3MiOiJGaXRiaXQiLCJ0eXAiOiJhY2Nlc3NfdG9rZW4iLCJzY29wZXMiOiJyc29jIHJlY2cgcnNldCByb3h5IHJudXQgcnBybyByc2xlIHJjZiByYWN0IHJsb2MgcnJlcyByd2VpIHJociBydGVtIiwiZXhwIjoxNzQ2ODUyNjI0LCJpYXQiOjE3MTUzMTY5OTR9.xcJoIi_O8rYh-sVXUbc0bBOk1JYCuLzYhzB3hJ9Tx1c"
 
@@ -42,9 +45,12 @@ def _get_heartrate():
     # Latest date to fetch data - yesterday
     pt=pendulum.timezone('America/Los_Angeles')
     yesterday = datetime.now(pt) - timedelta(days=1)
-
-    # Get latest date loaded into db
-    max_date = health_db.get_latest_date(table_name='heartrate_daily', schema='heartrate_silver', date_field="date")
+    
+    try:
+        # Get latest date loaded into db
+        max_date = health_db.get_latest_date(table_name='heartrate_daily', schema='heartrate_silver', date_field="date")
+    except:
+         max_date = yesterday - timedelta(days=1)
     
     # Date range to extract data
     date_range = generate_date_list(start_date=max_date, end_date=yesterday.date())
@@ -59,7 +65,7 @@ def _get_heartrate():
         response_json = response.json()
 
         if response.status_code != 200:
-            logging.error(f'API call failed with status: {response.status_code}')
+            logger.error(f'API call failed with status: {response.status_code}')
 
 
         heartrate_data = response_json['activities-heart-intraday']['dataset']
@@ -74,9 +80,9 @@ def _get_heartrate():
 
         df_heartrate['data_insert_timestamp'] = datetime.now()
 
-        logging.info(f"Successfully extracted data for {dt}: {df_heartrate.head()}")
+        logger.info(f"Successfully extracted data for {dt}: {df_heartrate.head()}")
 
-        logging.info(f'Storing file {output_dir}/heartrate_{dt}.csv')
+        logger.info(f'Storing file {output_dir}/heartrate_{dt}.csv')
 
         df_heartrate.to_csv(f'/opt/airflow/output/heartrate_{dt}.csv',index=False, mode='w')
 
@@ -98,8 +104,12 @@ def _load_runs_to_db():
 
     yesterday = pd.to_datetime(yesterday.date())
 
-    # Get latest date loaded into db
-    max_date = health_db.get_latest_date(table_name='heartrate_daily', schema='heartrate_silver', date_field="date")
+    try:
+        # Get latest date loaded into db
+        max_date = health_db.get_latest_date(table_name='heartrate_daily', schema='heartrate_silver', date_field="date")
+    except:
+         # If the table does not exist - Scan prior 3 days for runs as default 
+         max_date = yesterday - timedelta(days=3)
 
     max_date = pd.to_datetime(max_date)
 
@@ -107,12 +117,11 @@ def _load_runs_to_db():
 
     df_runs = get_logged_runs(n_days=days_unpdated+2)
 
-    # Upload to Database
-    health_db.load_df_to_db(df=df_runs, table_name='all_runs', schema='runs')
-
-
-
-
+    if df_runs is not None and not df_runs.empty:
+        # Upload to Database
+        health_db.load_df_to_db(df=df_runs, table_name='all_runs', schema='runs')
+    else:
+        logger.info(f'No logged runs between {max_date} - {yesterday}')
     
 
 with DAG(
