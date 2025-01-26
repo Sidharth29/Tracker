@@ -6,6 +6,7 @@ import dotenv
 import logging
 import shutil
 from datetime import datetime, timedelta
+from src.logger import AirflowLogger
 import pendulum
 
 dotenv.load_dotenv()
@@ -13,6 +14,8 @@ dotenv.load_dotenv()
 
 
 #TODO: Add a logging handler class
+
+logger = AirflowLogger('fitbit_pull_dag.data_load')
 
 
 src_dir = os.path.dirname(os.path.abspath(__file__))
@@ -63,8 +66,8 @@ class health_db:
         # Create a database engine
         engine = create_engine(f'postgresql+psycopg2://{cls.db_user}:{cls.db_password}@{cls.db_host}:{cls.db_port}/{cls.db_name}?options=-csearch_path={schema}')
         
-        logging.debug(f'Accessing database: {db_name}')
-        logging.debug("Loading data to table {table_name}")
+        logger.info(f'Accessing database: {db_name}')
+        logger.info(f"Loading data to table {table_name}")
         
         move_path = os.path.join(output_dir,'loaded_files',keyword)
         try:
@@ -74,13 +77,14 @@ class health_db:
                     filepath = os.path.join(output_dir, file)
                     df = pd.read_csv(filepath)
                     if "data_insert_timestamp" not in df.columns:
-                        df["data_insert_timestamp"] = np.nan
-                    logging.debug(f'Filename: {file}, content: {df.head(2)}')
-                    logging.debug(f'Inserting {df.shape[0]} rows into table {schema}.{table_name}')
+                        pt = pendulum.timezone('America/Los_Angeles')
+                        df["data_insert_timestamp"] = datetime.now(pt)
+                    logger.info(f'Filename: {file}, content: {df.head(2)}')
+                    logger.info(f'Inserting {df.shape[0]} rows into table {schema}.{table_name}')
                     df.to_sql(table_name, engine, if_exists='append', index=False, schema=schema)
-                    logging.debug(f'Successfully inserted data from {filepath}')
-                    logging.debug(f'Moving file to {move_path}')
+                    logger.info(f'Successfully inserted data from {filepath}')       
                     destination_path = os.path.join(move_path, file)
+                    logger.info(f'Moving file to {move_path}')
                     if os.path.exists(destination_path):
                         os.remove(destination_path)
                     os.makedirs(os.path.dirname(move_path), exist_ok=True)
@@ -88,10 +92,10 @@ class health_db:
         # except FileNotFoundError:
         #     logging.error(f"The directory {output_dir} does not exist.")
         except PermissionError:
-            logging.error(f"Permission denied to access the directory {output_dir}.")
+            logger.error(f"Permission denied to access the directory {output_dir}.")
 
 
-        print(f"Db User: {db_user}")
+        logger.info(f"Db User: {db_user}")
 
     @classmethod
     def load_df_to_db(cls, df: pd.DataFrame, table_name: str, schema: str):
@@ -113,9 +117,9 @@ class health_db:
         engine = create_engine(f'postgresql+psycopg2://{cls.db_user}:{cls.db_password}@{cls.db_host}:{cls.db_port}/{cls.db_name}?options=-csearch_path={schema}')
 
         # Upload data to table
-        logging.debug(f'Inserting {df.shape[0]} rows into table {schema}.{table_name}')
+        logger.info(f'Inserting {df.shape[0]} rows into table {schema}.{table_name}')
         df.to_sql(table_name, engine, if_exists='append', index=False, schema=schema)
-        logging.debug('Successfully inserted data to table')
+        logger.info('Successfully inserted data to table')
 
     @classmethod
     def get_latest_date(cls, table_name: str, schema: str, date_field: str):

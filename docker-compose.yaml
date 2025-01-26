@@ -69,6 +69,7 @@ x-airflow-common:
     AIRFLOW__CELERY__WORKER_PREFETCH_MULTIPLIER: 1
     AIRFLOW__CELERY__MAX_TASKS_PER_CHILD: 50
     AIRFLOW__LOGGING__LOGGING_LEVEL: 'INFO'
+    AIRFLOW__CORE__DEFAULT_TIMEZONE: America/Los_Angeles
     AIRFLOW__LOGGING__SHOW_CONTEXT_ENTER_EXIT: 'True'
     # yamllint disable rule:line-length
     # Use simple http server on scheduler for health checks
@@ -127,6 +128,11 @@ services:
       - "5430:5432"
     volumes:
       - ${AIRFLOW_PROJ_DIR:-.}/data:/var/lib/postgresql/data
+    healthcheck:  # Add this block
+      test: ["CMD", "pg_isready", "-U", "admin"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
 
   redis:
     image: redis:latest
@@ -141,6 +147,27 @@ services:
       start_period: 30s
     restart: always
 
+  airflow-scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+      args:
+        AIRFLOW_UID: ${AIRFLOW_UID:-50000}
+    user: "${AIRFLOW_UID:-50000}:0"
+    <<: *airflow-common
+    command: scheduler
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
   airflow-webserver:
     build:
       context: .
@@ -154,27 +181,6 @@ services:
       - "8080:8080"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-    restart: always
-    depends_on:
-      <<: *airflow-common-depends-on
-      airflow-init:
-        condition: service_completed_successfully
-
-  airflow-scheduler:
-    build:
-      context: .
-      dockerfile: Dockerfile.airflow
-      args:
-        AIRFLOW_UID: ${AIRFLOW_UID:-50000}
-    user: "${AIRFLOW_UID:-50000}:0"
-    <<: *airflow-common
-    command: scheduler
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -200,6 +206,7 @@ services:
         reservations:
           cpus: '0.5'
           memory: 1G
+    restart: always
     <<: *airflow-common
     command: celery worker
     healthcheck:
@@ -219,11 +226,8 @@ services:
       AIRFLOW__CELERY__BROKER_CONNECTION_TIMEOUT: 60
       AIRFLOW__CELERY__WORKER_SHUTDOWN_TIMEOUT: 60
       AIRFLOW__CELERY__OPERATION_TIMEOUT: 1.0
-    restart: unless-stopped
     depends_on:
-      redis:
-        condition: service_healthy
-      postgres:
+      airflow-scheduler:
         condition: service_healthy
       airflow-init:
         condition: service_completed_successfully
