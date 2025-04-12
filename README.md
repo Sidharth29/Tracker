@@ -12,13 +12,25 @@ The health data is extracted from fitbit and Strava
 ### Todo
 
 Things to fix:
-- Check if the DAG runs as soon as Docker turns on
-- Actual run time and date for runs (not the UTC time)
+- Make fitbit module to a class
+- Explore Fitbit Endpoints and pick any other ones to use
+- Remove dependence on csvs as an interim, use Xcom instead or other ephemeral option
+- Backup to S3 periodically
+- Pydantic for API response 
 - Runs fetch picks up a range not a specific date
+
+
+Ideas for data processing
+- Find resting heartrate
+- Duration watch worn
+- Time spent in each zone
 
 #### Visualize Pipeline
 
 Visualize the daily pipeline, the process flow and the end result
+
+
+
 
 #### Auto Initialize Database
 
@@ -33,3 +45,27 @@ Visualize the daily pipeline, the process flow and the end result
 - Option to backup data on S3 
 - S3: Lifecycle policy to move data older than X months to Cheapest form of Glacier - Deep Archive
 
+#### Process FLow
+
+- Check Internet Connection: The `InternetConnectionSensor` sensor checks if there is internet connectivity, it allows the next set of steps if there is network connectivity else it keeps retrying after 2 mins for a max period of an hour before stopping the process with a Network Connectivity error
+
+
+
+Versions
+
+V1:
+- Dockerized postgres + airflow
+- Single DAG which pulls heartrate data and sticks it into POSTGRES table
+
+V2:
+- Separate fitbit module that contains code to pull in heartrate data
+    Talk about benefits of using try and except statements to control error prompting
+- Another method to pull data for runs
+
+V3:
+- Another schema called heartrate_silver to integrate data from two tables using dbt
+- Add SQL steps to perform the processing steps
+
+Vx:
+- Add sensor to check for internet connection
+- Off load API data validation and the data type conversion to Pydantic
