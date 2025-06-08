@@ -1,0 +1,82 @@
+FROM python:3.10-slim-buster
+
+USER root
+
+# Set environment variables
+ENV AIRFLOW_HOME=/opt/airflow
+ENV PYTHON_VERSION=3.10
+ENV CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-2.5.1/constraints-3.10.txt"
+
+# Install system dependencies with platform-specific considerations for ARM64
+RUN apt-get clean && apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        curl \
+        default-libmysqlclient-dev \
+        gcc \
+        git \
+        python3-dev \
+        libpq-dev \
+        libpq5 \
+        gosu \
+        # Add these for ARM64
+        libffi-dev \
+        libssl-dev \
+    && apt-get autoremove -yqq --purge \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Apache Airflow with correct version and providers
+# Using constraint file helps manage dependencies better on ARM
+RUN pip install --no-cache-dir --constraint "${CONSTRAINT_URL}" "apache-airflow==2.5.1" \
+    && pip install --no-cache-dir "apache-airflow-providers-celery==3.1.0" \
+    && pip install --no-cache-dir "apache-airflow-providers-cncf-kubernetes==3.1.0" \
+    && pip install --no-cache-dir "celery==5.2.7" \
+    && pip install --no-cache-dir "redis==4.5.4" \
+    && pip install --no-cache-dir "kombu==5.2.3"
+
+ARG AIRFLOW_UID
+
+# Create airflow user with proper home directory
+RUN groupadd -g ${AIRFLOW_UID} airflow && \
+    useradd -u ${AIRFLOW_UID} -g airflow -d /home/airflow -m -s /bin/bash airflow && \
+    mkdir -p ${AIRFLOW_HOME} && \
+    mkdir -p /home/airflow/.local/bin && \
+    mkdir -p /home/airflow/.local/lib && \
+    chown -R airflow:root ${AIRFLOW_HOME} && \
+    chown -R airflow:root /home/airflow
+
+# Create and set permissions for Airflow directories
+RUN mkdir -p ${AIRFLOW_HOME}/dags \
+    && mkdir -p ${AIRFLOW_HOME}/logs \
+    && mkdir -p ${AIRFLOW_HOME}/plugins \
+    && mkdir -p ${AIRFLOW_HOME}/config \
+    && touch ${AIRFLOW_HOME}/airflow.cfg \
+    && chown -R airflow:root ${AIRFLOW_HOME} \
+    && chmod -R g+rw ${AIRFLOW_HOME}
+
+# DBT setup
+COPY dbt ${AIRFLOW_HOME}/dbt
+COPY requirements.txt ${AIRFLOW_HOME}/requirements.txt
+COPY .env ${AIRFLOW_HOME}/.env
+
+# Set correct permissions for copied files
+RUN chown -R airflow:root ${AIRFLOW_HOME} \
+    && chmod -R g+rw ${AIRFLOW_HOME}
+
+# Install packages as root first
+RUN pip install --no-cache-dir dbt-core dbt-postgres && \
+    pip install --no-cache-dir -r ${AIRFLOW_HOME}/requirements.txt
+
+# Copy and set up entrypoint
+COPY entrypoint.sh /entrypoint
+RUN chmod +x /entrypoint
+
+USER airflow
+ENV HOME=/home/airflow
+
+# Create DBT directories
+WORKDIR ${AIRFLOW_HOME}/dbt/transform_layer
+RUN mkdir -p models seeds snapshots tests macros analysis
+
+ENTRYPOINT ["/entrypoint"]

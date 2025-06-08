@@ -1,3 +1,5 @@
+__all__ = ['get_heartrate', 'get_logged_runs']
+
 import os
 import pandas as pd
 from datetime import datetime, timedelta
@@ -5,6 +7,8 @@ import requests
 import dotenv
 import pendulum
 import logging
+from src.logger import AirflowLogger
+from src.models import schema
 
 dotenv.load_dotenv()
 
@@ -15,40 +19,16 @@ output_dir = os.path.join(repo_dir,'output')
 logging.basicConfig(level=logging.INFO)
 
 
+# Setup Logger
+logger = AirflowLogger('fitbit_pull_dag')
+
+
 access_token=os.getenv('access_token')
 
 headers = {
             'Authorization': f'Bearer {access_token},'
         }
-
-
-
-def get_yesterday_heartrate():
-    """
-    Fetches the heart rate date from yesterday
-    """
-
-    yesterday = datetime.now() - timedelta(days=1)
-    yesterday = yesterday.strftime('%Y-%m-%d')
-
-    url = f"https://api.fitbit.com/1/user/-/activities/heart/date/{yesterday}/1d/1min/time/00:00/23:59.json"
-
-    response = requests.get(url, headers=headers)
-
-    response_json = response.json()
-
-    heartrate_data = response_json['activities-heart-intraday']['dataset']
         
-    df_heartrate = pd.DataFrame(heartrate_data)
-
-    df_heartrate['date'] = yesterday
-
-    df_heartrate = df_heartrate.rename({'value':'heartrate'}, axis=1)
-
-    return df_heartrate[['date','time','heartrate']]
-
-
-
 
 def store_csv(df_heartrate_yesterday):
     """
@@ -149,8 +129,46 @@ def get_logged_runs(n_days: int):
 
     return df_runs
 
+def get_heartrate(dt: str = None):
+    """
+    Fetches the heart rate date from yesterday
+    """
+        
+    try:
+        # Get latest date to fetch data - yesterday
+        pt = pendulum.timezone('America/Los_Angeles')
+
+        # If no date provided, use yesterday
+        if dt is None:
+            dt = (datetime.now(pt) - timedelta(days=1)).strftime('%Y-%m-%d')
+
+        url = f"https://api.fitbit.com/1/user/-/activities/heart/date/{dt}/1d/1min/time/00:00/23:59.json"
+            # Add timeout to the request
+        response = requests.get(url, headers=headers, timeout=30)
+        response.raise_for_status()
+        
+        response_json = response.json()
+
+        # Extract and validate response by loading it to a pydantic model
+        heartrate_response = schema.HeartrateResponse(**response_json)
+        heartrate_response_intraday = schema.HeartrateResponseList(**heartrate_response.activities)
+        df_heartrate = heartrate_response_intraday.to_dataframe()
+        
+        # Add date and data insert timestamp
+        df_heartrate['date'] = dt
+        df_heartrate['data_insert_timestamp'] = datetime.now(pt)
+        logger.info(f"Successfully extracted data for {dt}: {df_heartrate.head()}")
+        
+        return df_heartrate
+   
+    except requests.RequestException as e:
+        logger.error(f"Network error for date {dt}: {str(e)}")
+        raise
+
+    return None
+
 
 if __name__=='__main__':
-    df_heartrate = get_yesterday_heartrate()
+    df_heartrate = get_heartrate()
 
     store_csv(df_heartrate)
