@@ -130,24 +130,6 @@ def _get_heartrate():
         # url = f"https://api.fitbit.com/1/user/-/activities/heart/date/{dt_formatted}/1d/1min/time/00:00/23:59.json"
         
         try:
-            # # Add timeout to the request
-            # response = requests.get(url, headers=headers, timeout=30)
-            # response.raise_for_status()
-            
-            # response_json = response.json()
-
-            # logger.info(f'response: {response_json}')
-
-            # # Extract and validate response by loading it to a pydantic model
-            # heartrate_response = schema.HeartrateResponse(**response_json)
-            # heartrate_response_intraday = schema.HeartrateResponseList(**heartrate_response.activities)
-            # df_heartrate = heartrate_response_intraday.to_dataframe()
-            
-            # # Add date and data insert timestamp
-            # df_heartrate['date'] = dt
-            # df_heartrate['data_insert_timestamp'] = datetime.now(pt)
-            # logger.info(f"Successfully extracted data for {dt}: {df_heartrate.head()}")
-
             df_heartrate = get_heartrate(dt=dt_formatted)
             
             # Load data to a directory

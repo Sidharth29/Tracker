@@ -1,15 +1,60 @@
-# Tracker
+# Project Name: Tracker
 
-An ELT pipeline to fetch personal health and content consumption data from APIs, stage them in a central db (POSTGRES) and perform necessary transformations to extract stats/trends to display on a simple dashboard
+## Overview
 
-## Extraction
-
-### Health Data
-
-The health data is extracted from fitbit and Strava
+**Tracker** is a project designed to streamline and automate an ELT pipeline to fetch personal health and content consumption data from APIs, stage them in a central db (POSTGRES) and perform necessary transformations to extract stats/trends to display on a simple dashboardss efficiently.
 
 
-### Todo
+## Tools and Their Purpose
+
+- **Python**: Core programming language used for backend logic and data processing.
+- **Flask/Django**: Framework for building the web application and API endpoints.
+- **SQLite/PostgreSQL**: Database for storing and managing data.
+- **HTML/CSS/JavaScript**: Frontend technologies for creating a responsive user interface.
+- **Docker**: Containerization tool to ensure consistent development and deployment environments.
+- **Git**: Version control system for tracking changes and collaboration.
+
+## File Structure
+
+```
+Tracker/
+├── README.md          # Project documentation
+├── app/
+│   ├── __init__.py    # Application initialization
+│   ├── routes.py      # API routes and endpoints
+│   ├── models.py      # Database models
+│   ├── templates/     # HTML templates for the frontend
+│   └── static/        # Static files (CSS, JS, images)
+├── config/
+│   ├── config.py      # Configuration settings
+├── tests/
+│   ├── test_app.py    # Unit tests for the application
+├── requirements.txt   # Python dependencies
+├── Dockerfile         # Docker configuration
+└── .gitignore         # Files and directories to ignore in Git
+```
+
+## Getting Started
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/tracker.git
+   cd tracker
+   ```
+
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Run the application:
+   ```bash
+   python app.py
+   ```
+
+4. Access the application at `http://localhost:5000`.
+
+## Todo
 
 Things to fix:
 - Make fitbit module to a class
@@ -31,7 +76,6 @@ Visualize the daily pipeline, the process flow and the end result
 
 
 
-
 #### Auto Initialize Database
 
 - In the docker build process, include a step to
@@ -45,13 +89,9 @@ Visualize the daily pipeline, the process flow and the end result
 - Option to backup data on S3 
 - S3: Lifecycle policy to move data older than X months to Cheapest form of Glacier - Deep Archive
 
-#### Process FLow
-
-- Check Internet Connection: The `InternetConnectionSensor` sensor checks if there is internet connectivity, it allows the next set of steps if there is network connectivity else it keeps retrying after 2 mins for a max period of an hour before stopping the process with a Network Connectivity error
 
 
-
-Versions
+### Versions
 
 V1:
 - Dockerized postgres + airflow
@@ -69,3 +109,20 @@ V3:
 Vx:
 - Add sensor to check for internet connection
 - Off load API data validation and the data type conversion to Pydantic
+
+## Contributing
+
+Contributions are welcome! Please follow these steps:
+1. Fork the repository.
+2. Create a new branch for your feature or bug fix.
+3. Submit a pull request with a detailed description of your changes.
+
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for details.
+
+## Contact
+
+For questions or feedback, please reach out to [sidharthchandrasekar@gmail.com].
+
+
